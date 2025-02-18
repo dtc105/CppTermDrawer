@@ -15,11 +15,15 @@ class Plotter {
         int rows; // Amount of rows in the terminal
         float distance; // Distance camera is from (0,0,0).  If distance == -1 then the view is isometric
         float zoom; // "Zoom" factor of camera, effectively scales the end coords of all points proportionally
-        std::vector<std::vector<char>> plot; // The "string" being printed, holds a 2d matrix in order to print the image
+        std::vector<std::vector<int>> plot; // The "string" being printed, holds a 2d matrix in order to print the image
 
         // @brief Calculates what should be draw for each point
         void calculatePlot();
-    
+
+        std::array<std::array<int,2>,2> getCoords(std::array<std::array<float,3>, 2> endpoints);
+
+        char getChar(float z);
+
     public:
         // @brief Will tries its best to draw all points given in the terminal
         // @param distance the distance the camera is from (0,0,0)
@@ -36,18 +40,13 @@ class Plotter {
         // @param y0 the y coordinates of one of the endpoints
         // @param x1 the x coordinates of the other endpoint
         // @param x1 the y coordinates of the other endpoint
-        void drawLine(int x0, int y0, int x1, int y1);
+        void drawLine(int x0, int y0, float z0, int x1, int y1, float z1);
 
         // @brief Puts a pixel at (x,y)
         // @param x the horizontal part of the coordinate
         // @param y the vertical part of the coordinate
-        void putPixel(int x, int y);
+        void putPixel(int x, int y, int z);
 
-        // @brief Adds a point to plot
-        // @param point the point to add
-        void addPoint(std::array<float,3> point);
-
-        std::array<std::array<int,2>,2> getCoords(std::array<std::array<float,3>, 2> endpoints);
         // @brief Rotates all points along the x axis
         // @param theta the angle in radians of which to rotate the points
         void rotateX(float theta);
