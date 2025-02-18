@@ -10,7 +10,7 @@
 
 class Plotter {
     private:
-        std::vector<std::array<float, 6>> lines; // List of all lines being plotted with each array being 6 floats (x0,y0,z0) and (x1,y1,z1)
+        std::vector<std::array<std::array<float,3>, 2>> lines; // List of all lines being plotted with each array being 6 floats (x0,y0,z0) and (x1,y1,z1)
         int cols; // Amount of cols in the terminal
         int rows; // Amount of rows in the terminal
         float distance; // Distance camera is from (0,0,0).  If distance == -1 then the view is isometric
@@ -26,7 +26,7 @@ class Plotter {
         // @param zoom the factor all points will be scaled by
         Plotter(float distance = 1.0f, float zoom = 1.0f);
 
-        void addLine(std::array<float, 6> endpoints);
+        void addLine(std::array<std::array<float,3>, 2> endpoints);
         void addLine(float x0, float y0, float z0, float x1, float y1, float z1);
 
         void resetPlot();
@@ -47,8 +47,7 @@ class Plotter {
         // @param point the point to add
         void addPoint(std::array<float,3> point);
 
-        std::array<int,4> getCoords(std::array<float, 6> endpoints);
-
+        std::array<std::array<int,2>,2> getCoords(std::array<std::array<float,3>, 2> endpoints);
         // @brief Rotates all points along the x axis
         // @param theta the angle in radians of which to rotate the points
         void rotateX(float theta);

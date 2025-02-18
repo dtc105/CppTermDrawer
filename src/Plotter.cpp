@@ -26,7 +26,7 @@ Plotter::Plotter(float distance, float zoom) {
     this->plot.resize(rows, std::vector<char>(cols, ' '));
 }
 
-void Plotter::addLine(std::array<float, 6> endpoints) {
+void Plotter::addLine(std::array<std::array<float,3>, 2> endpoints) {
     this->lines.push_back(endpoints);
 }
 
@@ -42,13 +42,13 @@ void Plotter::resetPlot() {
     }
 }
 
-std::array<int,4> Plotter::getCoords(std::array<float, 6> endpoints) {
-    float x0 = endpoints[0];
-    float y0 = endpoints[1];
-    float z0 = endpoints[2];
-    float x1 = endpoints[3];
-    float y1 = endpoints[4];
-    float z1 = endpoints[5];
+std::array<std::array<int,2>,2> Plotter::getCoords(std::array<std::array<float,3>, 2> endpoints) {
+    float x0 = endpoints[0][0];
+    float y0 = endpoints[0][1];
+    float z0 = endpoints[0][2];
+    float x1 = endpoints[1][0];
+    float y1 = endpoints[1][1];
+    float z1 = endpoints[1][2];
 
     float scaler0 = this->distance * this->zoom / (this->distance + z0);
     float scaler1 = this->distance * this->zoom / (this->distance + z1);
@@ -58,7 +58,10 @@ std::array<int,4> Plotter::getCoords(std::array<float, 6> endpoints) {
     int xIndex1 = x1 * scaler1 + (cols - 1) / 2;
     int yIndex1 = y1 * scaler1 + (rows - 1) / 2;
 
-    return {xIndex0, yIndex0, xIndex1, yIndex1};
+    return {{
+        {xIndex0, yIndex0}, 
+        {xIndex1, yIndex1}
+    }};
 }
 
 // @brief Draws a line between two end points
@@ -139,15 +142,16 @@ void Plotter::rotateX(float theta) {
     float cosRes = cos(theta);
     float sinRes = sin(theta);
 
-    for (int i = 0; i < this->lines.size(); i++) {
-        float x0 = lines[i][0];
-        float y0 = lines[i][1];
-        float z0 = lines[i][2];
-        float x1 = lines[i][3];
-        float y1 = lines[i][4];
-        float z1 = lines[i][5];
+    for (int i = 0; i < (int)this->lines.size(); i++) {
+        float x0 = lines[i][0][0];
+        float y0 = lines[i][0][1];
+        float z0 = lines[i][0][2];
+        float x1 = lines[i][1][3];
+        float y1 = lines[i][1][4];
+        float z1 = lines[i][1][5];
 
-        lines[i] = {x0, y0 * cosRes - z0 * sinRes, y0 * sinRes + z0 * cosRes, x1, y1 * cosRes - z1 * sinRes, y1 * sinRes + z1 * cosRes};
+        lines[i][0] = {x0, y0 * cosRes - z0 * sinRes, y0 * sinRes + z0 * cosRes};
+        lines[i][1] = {x1, y1 * cosRes - z1 * sinRes, y1 * sinRes + z1 * cosRes};
     }     
 }
 
@@ -158,15 +162,16 @@ void Plotter::rotateY(float theta) {
     float cosRes = cos(theta);
     float sinRes = sin(theta);
 
-    for (int i = 0; i < this->lines.size(); i++) {
-        float x0 = lines[i][0];
-        float y0 = lines[i][1];
-        float z0 = lines[i][2];
-        float x1 = lines[i][3];
-        float y1 = lines[i][4];
-        float z1 = lines[i][5];
+    for (int i = 0; i < (int)this->lines.size(); i++) {
+        float x0 = lines[i][0][0];
+        float y0 = lines[i][0][1];
+        float z0 = lines[i][0][2];
+        float x1 = lines[i][1][3];
+        float y1 = lines[i][1][4];
+        float z1 = lines[i][1][5];
 
-        lines[i] = {x0 * cosRes + z0 * sinRes, y0, -x0 * sinRes + z0 * cosRes, x1 * cosRes + z1 * sinRes, y1, -x1 * sinRes + z1 * cosRes};
+        lines[i][0] = {x0 * cosRes + z0 * sinRes, y0, -x0 * sinRes + z0 * cosRes};
+        lines[i][1] = {x1 * cosRes + z1 * sinRes, y1, -x1 * sinRes + z1 * cosRes};
     }         
 }
 
@@ -177,15 +182,16 @@ void Plotter::rotateZ(float theta) {
     float cosRes = cos(theta);
     float sinRes = sin(theta);
 
-    for (int i = 0; i < this->lines.size(); i++) {
-        float x0 = lines[i][0];
-        float y0 = lines[i][1];
-        float z0 = lines[i][2];
-        float x1 = lines[i][3];
-        float y1 = lines[i][4];
-        float z1 = lines[i][5];
+    for (int i = 0; i < (int)this->lines.size(); i++) {
+        float x0 = lines[i][0][0];
+        float y0 = lines[i][0][1];
+        float z0 = lines[i][0][2];
+        float x1 = lines[i][1][3];
+        float y1 = lines[i][1][4];
+        float z1 = lines[i][1][5];
 
-        lines[i] = {x0 * cosRes - y0 * sinRes, x0 * sinRes + y0 * cosRes, z0, x1 * cosRes - y1 * sinRes, x1 * sinRes + y1 * cosRes, z1};
+        lines[i][0] = {x0 * cosRes - y0 * sinRes, x0 * sinRes + y0 * cosRes, z0};
+        lines[i][1] = {x1 * cosRes - y1 * sinRes, x1 * sinRes + y1 * cosRes, z1};
     }       
 }
 
@@ -200,8 +206,8 @@ void Plotter::draw() {
     this->resetPlot();
 
     for (const auto& line : this->lines) {
-        std::array<int,4> coords = this->getCoords(line);
-        drawLine(coords[0], coords[1], coords[2], coords[3]);
+        std::array<std::array<int,2>,2> coords = this->getCoords(line);
+        drawLine(coords[0][0], coords[0][1], coords[1][0], coords[1][1]);
     }
 
     std::string buffer;

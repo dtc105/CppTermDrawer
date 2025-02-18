@@ -7,7 +7,7 @@
 
 
 int main() {
-    Plotter plotter = Plotter(20.0f, 20.0f);
+    Plotter plotter = Plotter(20.0f, 10.0f);
 
     plotter.addLine(0, 0.5f, 0.809f, 0.5f, 0.809f, 0);
     plotter.addLine(0, 0.5f, 0.809f, -0.5f, 0.809f, 0);
