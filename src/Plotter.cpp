@@ -236,7 +236,19 @@ void Plotter::rotateZ(float theta) {
     }       
 }
 
-const std::string chars = "@%#*+=-:."; 
+const float maxZoom = 50.0f;
+void Plotter::changeZoomBy(float change) {
+    if (this->zoom + change <= 0 || this->zoom + change > maxZoom) return;
+    this->zoom += change;
+}
+
+const float maxDistance = 50.0f;
+void Plotter::changeDistanceBy(float change) {
+    if (this->distance + change <= 0 || this->distance + change > maxDistance) return;
+    this->distance += change;
+}
+
+const std::string chars = "@%#*+=-:. "; 
 const float z_min = -5.0;   
 const float z_max = 5.0; 
 char Plotter::getChar(float z) {

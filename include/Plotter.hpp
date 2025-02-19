@@ -58,6 +58,9 @@ class Plotter {
         // @brief Rotates all points along the Z axis
         // @param theta the angle in radians of which to rotate the points
         void rotateZ(float theta);
+
+        void changeZoomBy(float change);
+        void changeDistanceBy(float change);
         
         // @brief Calculates what should be draw for each cell then draws the points
         void draw();

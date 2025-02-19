@@ -10,7 +10,7 @@
 #define TAU = 6.283181030717910864769210287;
 
 int main() {
-    Plotter plotter = Plotter(10.0f, 4.0f);
+    Plotter plotter = Plotter(15.0f, 2.0f);
 
     //* Icosahedron
     plotter.addLine(0, 2.5f, 4.045f, 2.5f, 4.045f, 0);
@@ -75,12 +75,25 @@ int main() {
             if (GetAsyncKeyState('D') & 0x8000) { // D key
                 plotter.rotateY(0.1f);
             }
-            if (GetAsyncKeyState('Q') & 0x8000) { // Q key (quit)
+            if (GetAsyncKeyState('Q') & 0x8000) { // Q key
                 plotter.rotateZ(-0.1f);
             }
-            if (GetAsyncKeyState('E') & 0x8000) { // E key (example action)
+            if (GetAsyncKeyState('E') & 0x8000) { // E key
                 plotter.rotateZ(0.1f);
             }
+            if (GetAsyncKeyState('I') & 0x8000) { // I key
+                plotter.changeZoomBy(0.1f);
+            }
+            if (GetAsyncKeyState('O') & 0x8000) { // O key
+                plotter.changeZoomBy(-0.1f);
+            }
+            if (GetAsyncKeyState('J') & 0x8000) { // J key
+                plotter.changeDistanceBy(-0.1f);
+            }
+            if (GetAsyncKeyState('K') & 0x8000) { // K key
+                plotter.changeDistanceBy(0.1f);
+            }
+
             if (GetAsyncKeyState('Z') & 0x8000) break;
             plotter.draw();
         }
