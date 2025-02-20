@@ -7,22 +7,32 @@
 #include <math.h>
 #include <iostream>
 
+struct iPoint2 {
+    int x, y;
+};
+
+struct fPoint3 {
+    float x, y, z;
+};
 
 class Plotter {
     private:
-        std::vector<std::array<std::array<float,3>, 2>> lines; // List of all lines being plotted with each array being 6 floats (x0,y0,z0) and (x1,y1,z1)
+        std::vector<std::array<fPoint3, 2>> lines; // List of all lines being plotted
+        std::vector<std::array<fPoint3, 3>> triangles; // List of all triangles being plotted
         int cols; // Amount of cols in the terminal
         int rows; // Amount of rows in the terminal
         float distance; // Distance camera is from (0,0,0).  If distance == -1 then the view is isometric
         float zoom; // "Zoom" factor of camera, effectively scales the end coords of all points proportionally
         std::vector<std::vector<int>> plot; // The "string" being printed, holds a 2d matrix in order to print the image
+        bool renderStyle;
 
         // @brief Calculates what should be draw for each point
         void calculatePlot();
 
-        std::array<std::array<int,2>,2> getCoords(std::array<std::array<float,3>, 2> endpoints);
+        std::array<iPoint2,2> getCoords(std::array<fPoint3, 2> endpoints);
+        std::array<iPoint2,3> getCoords(std::array<fPoint3, 3> endpoints);
 
-        char getChar(float z);
+        // char getChar(int z);
 
     public:
         // @brief Will tries its best to draw all points given in the terminal
@@ -30,8 +40,14 @@ class Plotter {
         // @param zoom the factor all points will be scaled by
         Plotter(float distance = 1.0f, float zoom = 1.0f);
 
-        void addLine(std::array<std::array<float,3>, 2> endpoints);
+        void addLine(std::array<fPoint3, 2> endpoints);
         void addLine(float x0, float y0, float z0, float x1, float y1, float z1);
+
+        void addTriangle(std::array<fPoint3, 3> vertices);
+        void addTriangle(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2);
+        
+        void addDoubleTriangle(std::array<fPoint3, 3> vertices);
+        void addDoubleTriangle(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2);
 
         void resetPlot();
 
@@ -40,8 +56,9 @@ class Plotter {
         // @param y0 the y coordinates of one of the endpoints
         // @param x1 the x coordinates of the other endpoint
         // @param x1 the y coordinates of the other endpoint
-        void drawLine(int x0, int y0, float z0, int x1, int y1, float z1);
+        std::vector<std::vector<int>> drawLine(iPoint2 p0, float z0, iPoint2 p1, float z1);
 
+        void drawTriangle(iPoint2 p0, float z0, iPoint2 p1, float z1, iPoint2 p2, float z2);
         // @brief Puts a pixel at (x,y)
         // @param x the horizontal part of the coordinate
         // @param y the vertical part of the coordinate
@@ -61,9 +78,16 @@ class Plotter {
 
         void changeZoomBy(float change);
         void changeDistanceBy(float change);
+        void toggleRender();
         
         // @brief Calculates what should be draw for each cell then draws the points
         void draw();
+
+        void cube(float r);
+        void filledCube(float r);
+
+        void icosahedron(float r);
+        void filledIcosahedron(float r);
 
         void end();
 };
