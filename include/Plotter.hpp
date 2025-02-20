@@ -49,6 +49,8 @@ class Plotter {
         void addDoubleTriangle(std::array<fPoint3, 3> vertices);
         void addDoubleTriangle(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2);
 
+        void addPolygon(std::vector<fPoint3> vertices);
+
         void resetPlot();
 
         // @brief Draws a line between two end points

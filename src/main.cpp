@@ -11,13 +11,8 @@
 
 int main() {
     Plotter plotter = Plotter(15.0f, 2.0f);
-    // for (float i = 0.01; i <= 5.0f; i += 0.01) {
-    //     plotter.cube(i);
-    // }
-    // plotter.cube(5);
-    // plotter.addTriangle(0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 5.0, 5.0, 0.0);
-    // plotter.filledCube(5);
-    plotter.icosahedron(5);
+
+    plotter.filledIcosahedron(5);
 
     plotter.draw();
     while (true) {

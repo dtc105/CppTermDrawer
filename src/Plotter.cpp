@@ -54,6 +54,14 @@ void Plotter::addDoubleTriangle(float x0, float y0, float z0, float x1, float y1
     this->addTriangle(x0, y0, z0, x2, y2, z2, x1, y1, z1);
 }
 
+void Plotter::addPolygon(std::vector<fPoint3> vertices) {
+    if (vertices.size() < 3) return;
+
+    for (int i = 1; i < vertices.size() - 1; i++) {
+        this->addTriangle({{vertices[0], vertices[i], vertices[i + 1]}});
+    }
+}
+
 void Plotter::resetPlot() {
     for (int j = 0; j < rows; j++) {
         for (int i = 0; i < cols; i++) {
@@ -480,9 +488,50 @@ void Plotter::cube(float r) {
     this->addLine( 0.57735f * r, -0.57735f * r, -0.57735f * r,  0.57735f * r, -0.57735f * r,  0.57735f * r);
     this->addLine( 0.57735f * r,  0.57735f * r, -0.57735f * r,  0.57735f * r,  0.57735f * r,  0.57735f * r);
 }
-
 void Plotter::filledCube(float r) {
-    //TODO To be made
+    float a = 0.577 * r;
+
+    this->addPolygon({{
+        {-a, -a, -a}, 
+        { a, -a, -a}, 
+        { a,  a, -a}, 
+        {-a,  a, -a}
+    }});
+
+    this->addPolygon({{
+        {-a, -a,  a}, 
+        {-a,  a,  a}, 
+        { a,  a,  a}, 
+        { a, -a,  a}
+    }});
+
+    this->addPolygon({{
+        {-a, -a, -a}, 
+        {-a, -a,  a}, 
+        { a, -a,  a}, 
+        { a, -a, -a}
+    }});
+
+    this->addPolygon({{
+        {-a,  a, -a}, 
+        { a,  a, -a}, 
+        { a,  a,  a}, 
+        {-a,  a,  a}
+    }});
+
+    this->addPolygon({{
+        {-a, -a, -a}, 
+        {-a,  a, -a}, 
+        {-a,  a,  a}, 
+        {-a, -a,  a}
+    }});
+
+    this->addPolygon({{
+        { a, -a, -a}, 
+        { a, -a,  a}, 
+        { a,  a,  a}, 
+        { a,  a, -a}
+    }});
 }
 
 void Plotter::icosahedron(float r) {
@@ -519,7 +568,32 @@ void Plotter::icosahedron(float r) {
 }
 
 void Plotter::filledIcosahedron(float r) {
-    //TODO To be made
+    float a = 0.526 * r;
+    float b = 0.851 * r;
+
+    this->addTriangle(0, -a, -b, 0, a, -b, -b, 0, -a);
+    this->addTriangle(0, -a, b, -b, 0, a, 0, a, b);
+    this->addTriangle(0, -a, -b, a, -b, 0, b, 0, -a);
+    this->addTriangle(0, a, b, -a, b, 0, a, b, 0);
+    this->addTriangle(-a, b, 0, -b, 0, a, -b, 0, -a);
+
+    this->addTriangle(a, b, 0, b, 0, -a, b, 0, a);
+    this->addTriangle(0, -a, -b, -b, 0, -a, -a, -b, 0);
+    this->addTriangle(0 ,-a, b, b, 0, a, a, -b, 0);
+    this->addTriangle(0, a, -b, b, 0, -a, a, b, 0);
+    this->addTriangle(0, -a, b, a, -b, 0, -a, -b, 0);
+
+    this->addTriangle(0, a, -b, a, b, 0, -a, b, 0);
+    this->addTriangle(0, -a, b, -a, -b, 0, -b, 0, a);
+    this->addTriangle(0, a, -b, -a, b, 0, -b, 0, -a);
+    this->addTriangle(0, a, b, a, b, 0, b, 0 ,a);
+    this->addTriangle(-a, -b, 0, -b, 0, -a, -b, 0, a);
+
+    this->addTriangle(a, -b, 0, b, 0, a, b, 0, -a);
+    this->addTriangle(0, -a, -b, -a, -b, 0, a, -b, 0);
+    this->addTriangle(0, a, b, -b, 0, a, -a, b, 0);
+    this->addTriangle(0, -a, -b, b, 0, -a, 0, a, -b);
+    this->addTriangle(0, -a, b, 0, a, b, b, 0, a);
 } 
 void Plotter::end() {
     std::cout << "\x1B[2J\x1B[H";
