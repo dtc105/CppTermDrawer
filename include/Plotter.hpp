@@ -25,14 +25,12 @@ class Plotter {
         float zoom; // "Zoom" factor of camera, effectively scales the end coords of all points proportionally
         std::vector<std::vector<int>> plot; // The "string" being printed, holds a 2d matrix in order to print the image
         bool renderStyle;
+        
 
         // @brief Calculates what should be draw for each point
         void calculatePlot();
 
-        std::array<iPoint2,2> getCoords(std::array<fPoint3, 2> endpoints);
-        std::array<iPoint2,3> getCoords(std::array<fPoint3, 3> endpoints);
-
-        // char getChar(int z);
+        iPoint2 to2d(fPoint3 point);
 
     public:
         // @brief Will tries its best to draw all points given in the terminal
@@ -50,6 +48,7 @@ class Plotter {
         void addDoubleTriangle(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2);
 
         void addPolygon(std::vector<fPoint3> vertices);
+        void addDoublePolygon(std::vector<fPoint3> vertices);
 
         void resetPlot();
 
@@ -58,7 +57,7 @@ class Plotter {
         // @param y0 the y coordinates of one of the endpoints
         // @param x1 the x coordinates of the other endpoint
         // @param x1 the y coordinates of the other endpoint
-        std::vector<std::vector<int>> drawLine(iPoint2 p0, float z0, iPoint2 p1, float z1);
+        void drawLine(iPoint2 p0, float z0, iPoint2 p1, float z1);
 
         void drawTriangle(iPoint2 p0, float z0, iPoint2 p1, float z1, iPoint2 p2, float z2);
         // @brief Puts a pixel at (x,y)
@@ -90,6 +89,8 @@ class Plotter {
 
         void icosahedron(float r);
         void filledIcosahedron(float r);
+
+        void duck();
 
         void end();
 };

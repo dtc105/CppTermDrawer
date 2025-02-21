@@ -12,15 +12,19 @@
 int main() {
     Plotter plotter = Plotter(15.0f, 2.0f);
 
-    plotter.filledIcosahedron(5);
+    // plotter.addLine(0,0,0,5,0,0);
+    // plotter.addLine(0,0,0,0,5,0);
+    // plotter.addLine(0,0,0,0,0,5);
+    // plotter.duck();
+    plotter.cube(5);
 
     plotter.draw();
     while (true) {
         if (_kbhit()) { // Check if a key is pressed
             if (GetAsyncKeyState('W') & 0x8000) { // W key
-                plotter.rotateX(-0.1f);
-            } else if (GetAsyncKeyState('S') & 0x8000) { // S key
                 plotter.rotateX(0.1f);
+            } else if (GetAsyncKeyState('S') & 0x8000) { // S key
+                plotter.rotateX(-0.1f);
             }
 
             if (GetAsyncKeyState('A') & 0x8000) { // A key
@@ -30,9 +34,9 @@ int main() {
             }
 
             if (GetAsyncKeyState('Q') & 0x8000) { // Q key
-                plotter.rotateZ(-0.1f);
-            } else if (GetAsyncKeyState('E') & 0x8000) { // E key
                 plotter.rotateZ(0.1f);
+            } else if (GetAsyncKeyState('E') & 0x8000) { // E key
+                plotter.rotateZ(-0.1f);
             }
 
             if (GetAsyncKeyState('I') & 0x8000) { // I key

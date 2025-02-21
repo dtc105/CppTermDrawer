@@ -1,6 +1,6 @@
+#define NOMINMAX
 #include <array>
 #include <vector>
-#define NOMINMAX
 #include <windows.h>
 #include <math.h>
 #include <algorithm>
@@ -49,16 +49,30 @@ void Plotter::addTriangle(float x0, float y0, float z0, float x1, float y1, floa
     this->triangles.push_back(newTriangle);
 }
 
+void Plotter::addDoubleTriangle(std::array<fPoint3, 3> vertices) {
+    this->addTriangle(vertices);
+    this->addTriangle({{vertices[0], vertices[2], vertices[1]}});
+}
+
 void Plotter::addDoubleTriangle(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2) {
     this->addTriangle(x0, y0, z0, x1, y1, z1, x2, y2, z2);
     this->addTriangle(x0, y0, z0, x2, y2, z2, x1, y1, z1);
 }
 
+
 void Plotter::addPolygon(std::vector<fPoint3> vertices) {
     if (vertices.size() < 3) return;
 
-    for (int i = 1; i < vertices.size() - 1; i++) {
+    for (int i = 1; i < (int)vertices.size() - 1; i++) {
         this->addTriangle({{vertices[0], vertices[i], vertices[i + 1]}});
+    }
+}
+
+void Plotter::addDoublePolygon(std::vector<fPoint3> vertices) {
+    if (vertices.size() < 3) return;
+
+    for (int i = 1; i < (int)vertices.size() - 1; i++) {
+        this->addDoubleTriangle({{vertices[0], vertices[i], vertices[i + 1]}});
     }
 }
 
@@ -70,55 +84,17 @@ void Plotter::resetPlot() {
     }
 }
 
-std::array<iPoint2,2> Plotter::getCoords(std::array<fPoint3, 2> endpoints) {
-    float x0 = endpoints[0].x;
-    float y0 = endpoints[0].y;
-    float z0 = endpoints[0].z;
-    float x1 = endpoints[1].x;
-    float y1 = endpoints[1].y;
-    float z1 = endpoints[1].z;
+iPoint2 Plotter::to2d(fPoint3 point) {
+    float x = point.x;
+    float y = point.y;
+    float z = point.z;
 
-    float scaler0 = this->distance * this->zoom / (this->distance + z0);
-    float scaler1 = this->distance * this->zoom / (this->distance + z1);
+    float scaler = this->distance * this->zoom / (this->distance + z);
 
-    int xIndex0 = x0 * scaler0 + (cols - 1) / 2;
-    int yIndex0 = y0 * scaler0 + (rows - 1) / 2;
-    int xIndex1 = x1 * scaler1 + (cols - 1) / 2;
-    int yIndex1 = y1 * scaler1 + (rows - 1) / 2;
+    int xIndex = x * scaler + (this->cols - 1) / 2;
+    int yIndex = y * scaler + (this->rows - 1) / 2;
 
-    return {{
-        {xIndex0, yIndex0}, 
-        {xIndex1, yIndex1}
-    }};
-}
-
-std::array<iPoint2,3> Plotter::getCoords(std::array<fPoint3, 3> endpoints) {
-    float x0 = endpoints[0].x;
-    float y0 = endpoints[0].y;
-    float z0 = endpoints[0].z;
-    float x1 = endpoints[1].x;
-    float y1 = endpoints[1].y;
-    float z1 = endpoints[1].z;
-    float x2 = endpoints[2].x;
-    float y2 = endpoints[2].y;
-    float z2 = endpoints[2].z;
-
-    float scaler0 = this->distance * this->zoom / (this->distance + z0);
-    float scaler1 = this->distance * this->zoom / (this->distance + z1);
-    float scaler2 = this->distance * this->zoom / (this->distance + z2);
-
-    int xIndex0 = x0 * scaler0 + (cols - 1) / 2;
-    int yIndex0 = y0 * scaler0 + (rows - 1) / 2;
-    int xIndex1 = x1 * scaler1 + (cols - 1) / 2;
-    int yIndex1 = y1 * scaler1 + (rows - 1) / 2;
-    int xIndex2 = x2 * scaler2 + (cols - 1) / 2;
-    int yIndex2 = y2 * scaler2 + (rows - 1) / 2;
-
-    return {{
-        {xIndex0, yIndex0}, 
-        {xIndex1, yIndex1},
-        {xIndex2, yIndex2}
-    }};
+    return {xIndex, yIndex};
 }
 
 // @brief Draws a line between two end points
@@ -126,12 +102,7 @@ std::array<iPoint2,3> Plotter::getCoords(std::array<fPoint3, 3> endpoints) {
 // @param y0 the y coordinates of one of the endpoints
 // @param x1 the x coordinates of the other endpoint
 // @param x1 the y coordinates of the other endpoint
-std::vector<std::vector<int>> Plotter::drawLine(iPoint2 p0, float z0, iPoint2 p1, float z1) {
-    int yMin = std::min(p0.y, p1.y);
-    int yMax = std::max(p0.y, p1.y);
-
-    std::vector<std::vector<int>> xValues(yMax - yMin + 1); 
-
+void Plotter::drawLine(iPoint2 p0, float z0, iPoint2 p1, float z1) {
     if (abs(p1.x - p0.x) > abs(p1.y - p0.y)) {
         if (p0.x > p1.x) {
             int tempX = p0.x;
@@ -164,7 +135,6 @@ std::vector<std::vector<int>> Plotter::drawLine(iPoint2 p0, float z0, iPoint2 p1
 
             for (int i = 0; i < dx + 1; i++) {
                 this->putPixel(p0.x + i, y, z);
-                xValues[y - yMin].push_back(p0.x + i);
 
                 if (py >= 0) {
                     y += dirY;
@@ -211,7 +181,6 @@ std::vector<std::vector<int>> Plotter::drawLine(iPoint2 p0, float z0, iPoint2 p1
 
             for (int i = 0; i < dy + 1; i++) {
                 this->putPixel(x, p0.y + i, z);
-                xValues[p0.y + i - yMin].push_back(x);
 
                 if (px >= 0) {
                     x += dirX;
@@ -227,7 +196,6 @@ std::vector<std::vector<int>> Plotter::drawLine(iPoint2 p0, float z0, iPoint2 p1
             }
         }
     }
-    return xValues;
 }
 
 int edgeFunction (iPoint2 a, iPoint2 b, iPoint2 c) {
@@ -412,25 +380,27 @@ void Plotter::toggleRender() {
 }
 
 const std::string chars = "@%#*+=-:. "; 
-const float z_min = -5.0f;   
-const float z_max = 5.0f; 
+const float zMin = -5.0f;   
+const float zMax = 5.0f; 
 char getChar(int z) {
-    if (z <= z_min || z >= z_max) return ' ';
+    if (z <= zMin || z >= zMax) return ' ';
 
-    return chars[static_cast<int>((z - z_min) / (z_max - z_min) * (chars.size() - 1))];
+    float zNorm = (z - zMin) / (zMax - zMin);
+
+    int index = static_cast<int>(zNorm * (chars.size() - 1));
+
+    return chars[index];
 }
 
 std::string getAnsi(int z) {
-    if (z <= z_min || z >= z_max) return " ";
+    if (z <= zMin || z >= zMax) return " ";
 
-    int value = 255 - static_cast<int>((z - z_min) / (z_max - z_min) * 255);
+    int value = 255 - static_cast<int>((z - zMin) / (zMax - zMin) * 255);
     std::string strValue = std::to_string(value);
 
     return "\033[38;2;" + strValue + ";" + strValue + ";" + strValue + "m" + (char)219u + "\033[0m";
-
-    // return std::format("\033[38;2;{};{};{}m{}\033[0m", value, value, value, (char)219u);
-
 }
+
 // @brief Calculates what should be draw for each cell then draws the points
 void Plotter::draw() {
     // Move cursor to the starting position
@@ -442,19 +412,22 @@ void Plotter::draw() {
     this->resetPlot();
 
     for (const auto& line : this->lines) {
-        std::array<iPoint2,2> coords = this->getCoords(line);
-        this->drawLine(coords[0], line[0].z, coords[1], line[1].z);
+        iPoint2 aCoord = this->to2d(line[0]);
+        iPoint2 bCoord = this->to2d(line[1]);
+        this->drawLine(aCoord, line[0].z, bCoord, line[1].z);
     }
 
     for (const auto& triangle : this->triangles) {
-        std::array<iPoint2,3> coords = this->getCoords(triangle);
-        drawTriangle(coords[0], triangle[0].z, coords[1], triangle[1].z, coords[2], triangle[2].z);
+        iPoint2 aCoord = this->to2d(triangle[0]);
+        iPoint2 bCoord = this->to2d(triangle[1]);
+        iPoint2 cCoord = this->to2d(triangle[2]);
+        drawTriangle(aCoord, triangle[0].z, bCoord, triangle[1].z, cCoord, triangle[2].z);
     }
 
     std::string buffer;
     buffer.reserve(rows * cols);
 
-    for (int j = 0; j < rows; j++) {
+    for (int j = rows - 1; j >= 0; j--) {
         for (int i = 0; i < cols; i++) {
             if (renderStyle) {
                 buffer += getAnsi(this->plot[j][i]);
@@ -473,23 +446,26 @@ void Plotter::draw() {
 }
 
 void Plotter::cube(float r) {
-    this->addLine(-0.57735f * r, -0.57735f * r, -0.57735f * r,  0.57735f * r, -0.57735f * r, -0.57735f * r);
-    this->addLine(-0.57735f * r, -0.57735f * r,  0.57735f * r,  0.57735f * r, -0.57735f * r,  0.57735f * r);
-    this->addLine(-0.57735f * r,  0.57735f * r, -0.57735f * r,  0.57735f * r,  0.57735f * r, -0.57735f * r);
-    this->addLine(-0.57735f * r,  0.57735f * r,  0.57735f * r,  0.57735f * r,  0.57735f * r,  0.57735f * r);
+    float a = 0.57735 * r;
 
-    this->addLine(-0.57735f * r, -0.57735f * r, -0.57735f * r, -0.57735f * r,  0.57735f * r, -0.57735f * r);
-    this->addLine(-0.57735f * r, -0.57735f * r,  0.57735f * r, -0.57735f * r,  0.57735f * r,  0.57735f * r);
-    this->addLine( 0.57735f * r, -0.57735f * r, -0.57735f * r,  0.57735f * r,  0.57735f * r, -0.57735f * r);
-    this->addLine( 0.57735f * r, -0.57735f * r,  0.57735f * r,  0.57735f * r,  0.57735f * r,  0.57735f * r);
+    this->addLine(-a, -a, -a,  a, -a, -a);
+    this->addLine(-a, -a,  a,  a, -a,  a);
+    this->addLine(-a,  a, -a,  a,  a, -a);
+    this->addLine(-a,  a,  a,  a,  a,  a);
 
-    this->addLine(-0.57735f * r, -0.57735f * r, -0.57735f * r, -0.57735f * r, -0.57735f * r,  0.57735f * r);
-    this->addLine(-0.57735f * r,  0.57735f * r, -0.57735f * r, -0.57735f * r,  0.57735f * r,  0.57735f * r);
-    this->addLine( 0.57735f * r, -0.57735f * r, -0.57735f * r,  0.57735f * r, -0.57735f * r,  0.57735f * r);
-    this->addLine( 0.57735f * r,  0.57735f * r, -0.57735f * r,  0.57735f * r,  0.57735f * r,  0.57735f * r);
+    this->addLine(-a, -a, -a, -a,  a, -a);
+    this->addLine(-a, -a,  a, -a,  a,  a);
+    this->addLine( a, -a, -a,  a,  a, -a);
+    this->addLine( a, -a,  a,  a,  a,  a);
+
+    this->addLine(-a, -a, -a, -a, -a,  a);
+    this->addLine(-a,  a, -a, -a,  a,  a);
+    this->addLine( a, -a, -a,  a, -a,  a);
+    this->addLine( a,  a, -a,  a,  a,  a);
 }
+
 void Plotter::filledCube(float r) {
-    float a = 0.577 * r;
+    float a = 0.57735 * r;
 
     this->addPolygon({{
         {-a, -a, -a}, 
@@ -535,36 +511,39 @@ void Plotter::filledCube(float r) {
 }
 
 void Plotter::icosahedron(float r) {
-    this->addLine(0.0f * r, 0.526f * r, 0.851f * r, 0.526f * r, 0.851f * r, 0.0f * r);
-    this->addLine(0.0f * r, 0.526f * r, 0.851f * r, -0.526f * r, 0.851f * r, 0.0f * r);
-    this->addLine(0.0f * r, 0.526f * r, -0.851f * r, 0.526f * r, 0.851f * r, 0.0f * r);
-    this->addLine(0.0f * r, 0.526f * r, -0.851f * r, -0.526f * r, 0.851f * r, 0.0f * r);
-    this->addLine(0.0f * r, -0.526f * r, 0.851f * r, 0.526f * r, -0.851f * r, 0.0f * r);
-    this->addLine(0.0f * r, -0.526f * r, 0.851f * r, -0.526f * r, -0.851f * r, 0.0f * r);
-    this->addLine(0.0f * r, -0.526f * r, -0.851f * r, 0.526f * r, -0.851f * r, 0.0f * r);
-    this->addLine(0.0f * r, -0.526f * r, -0.851f * r, -0.526f * r, -0.851f * r, 0.0f * r);
-    this->addLine(0.0f * r, 0.526f * r, 0.851f * r, 0.851f * r, 0.0f * r, 0.526f * r);
-    this->addLine(0.0f * r, 0.526f * r, 0.851f * r, -0.851f * r, 0.0f * r, 0.526f * r);
-    this->addLine(0.0f * r, 0.526f * r, -0.851f * r, 0.851f * r, 0.0f * r, -0.526f * r);
-    this->addLine(0.0f * r, 0.526f * r, -0.851f * r, -0.851f * r, 0.0f * r, -0.526f * r);
-    this->addLine(0.0f * r, -0.526f * r, 0.851f * r, 0.851f * r, 0.0f * r, 0.526f * r);
-    this->addLine(0.0f * r, -0.526f * r, 0.851f * r, -0.851f * r, 0.0f * r, 0.526f * r);
-    this->addLine(0.0f * r, -0.526f * r, -0.851f * r, 0.851f * r, 0.0f * r, -0.526f * r);
-    this->addLine(0.0f * r, -0.526f * r, -0.851f * r, -0.851f * r, 0.0f * r, -0.526f * r);
-    this->addLine(0.526f * r, 0.851f * r, 0.0f * r, 0.851f * r, 0.0f * r, 0.526f * r);
-    this->addLine(0.526f * r, 0.851f * r, 0.0f * r, 0.851f * r, 0.0f * r, -0.526f * r);
-    this->addLine(0.526f * r, -0.851f * r, 0.0f * r, 0.851f * r, 0.0f * r, 0.526f * r);
-    this->addLine(0.526f * r, -0.851f * r, 0.0f * r, 0.851f * r, 0.0f * r, -0.526f * r);
-    this->addLine(-0.526f * r, 0.851f * r, 0.0f * r, -0.851f * r, 0.0f * r, 0.526f * r);
-    this->addLine(-0.526f * r, 0.851f * r, 0.0f * r, -0.851f * r, 0.0f * r, -0.526f * r);
-    this->addLine(-0.526f * r, -0.851f * r, 0.0f * r, -0.851f * r, 0.0f * r, 0.526f * r);
-    this->addLine(-0.526f * r, -0.851f * r, 0.0f * r, -0.851f * r, 0.0f * r, -0.526f * r);
-    this->addLine(0.0f * r, 0.526f * r, 0.851f * r, 0.0f * r, -0.526f * r, 0.851f * r);
-    this->addLine(0.0f * r, 0.526f * r, -0.851f * r, 0.0f * r, -0.526f * r, -0.851f * r);
-    this->addLine(0.526f * r, 0.851f * r, 0.0f * r, -0.526f * r, 0.851f * r, 0.0f * r);
-    this->addLine(0.526f * r, -0.851f * r, 0.0f * r, -0.526f * r, -0.851f * r, 0.0f * r);
-    this->addLine(0.851f * r, 0.0f * r, 0.526f * r, 0.851f * r, 0.0f * r, -0.526f * r);
-    this->addLine(-0.851f * r, 0.0f * r, 0.526f * r, -0.851f * r, 0.0f * r, -0.526f * r);
+    float a = 0.526 * r;
+    float b = 0.851f * r;
+
+    this->addLine(0, a, b, a, b, 0);
+    this->addLine(0, a, b, -a, b, 0);
+    this->addLine(0, a, -b, a, b, 0);
+    this->addLine(0, a, -b, -a, b, 0);
+    this->addLine(0, -a, b, a, -b, 0);
+    this->addLine(0, -a, b, -a, -b, 0);
+    this->addLine(0, -a, -b, a, -b, 0);
+    this->addLine(0, -a, -b, -a, -b, 0);
+    this->addLine(0, a, b, b, 0, a);
+    this->addLine(0, a, b, -b, 0, a);
+    this->addLine(0, a, -b, b, 0, -a);
+    this->addLine(0, a, -b, -b, 0, -a);
+    this->addLine(0, -a, b, b, 0, a);
+    this->addLine(0, -a, b, -b, 0, a);
+    this->addLine(0, -a, -b, b, 0, -a);
+    this->addLine(0, -a, -b, -b, 0, -a);
+    this->addLine(a, b, 0, b, 0, a);
+    this->addLine(a, b, 0, b, 0, -a);
+    this->addLine(a, -b, 0, b, 0, a);
+    this->addLine(a, -b, 0, b, 0, -a);
+    this->addLine(-a, b, 0, -b, 0, a);
+    this->addLine(-a, b, 0, -b, 0, -a);
+    this->addLine(-a, -b, 0, -b, 0, a);
+    this->addLine(-a, -b, 0, -b, 0, -a);
+    this->addLine(0, a, b, 0, -a, b);
+    this->addLine(0, a, -b, 0, -a, -b);
+    this->addLine(a, b, 0, -a, b, 0);
+    this->addLine(a, -b, 0, -a, -b, 0);
+    this->addLine(b, 0, a, b, 0, -a);
+    this->addLine(-b, 0, a, -b, 0, -a);
 }
 
 void Plotter::filledIcosahedron(float r) {
@@ -595,6 +574,37 @@ void Plotter::filledIcosahedron(float r) {
     this->addTriangle(0, -a, -b, b, 0, -a, 0, a, -b);
     this->addTriangle(0, -a, b, 0, a, b, b, 0, a);
 } 
+
+void Plotter::duck() {
+    this->addDoublePolygon({{
+        {0,-2,0},
+        {1,-2,0},
+        {1,2,0},
+        {0,2,0}
+    }});
+
+    this->addDoublePolygon({{
+        {-2,0,0},
+        {-1,0,0},
+        {-1,1,0},
+        {-2,1,0}
+    }});
+
+    this->addDoublePolygon({{
+        {-1,1,0},
+        {1,1,0},
+        {1,2,0},
+        {-1,2,0}
+    }});
+
+    this->addDoublePolygon({{
+        {-1,0,0},
+        {-1,-2,0},
+        {2,-2,0},
+        {2,0,0}
+    }});
+}
+
 void Plotter::end() {
     std::cout << "\x1B[2J\x1B[H";
 }
