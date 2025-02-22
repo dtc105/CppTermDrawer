@@ -4,20 +4,19 @@
 #include <windows.h>
 #include <math.h>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <string.h>
 #include <iostream>
 #include "Plotter.hpp"
 
-// @brief Will tries its best to draw all points given in the terminal
-// @param distance the distance the camera is from (0,0,0)
-// @param zoom the factor all points will be scaled by
-// @param points the initial points to plot
 Plotter::Plotter(float distance, float zoom) {
     // Setting given initial values
     this->distance = distance;
     this->zoom = zoom;
     this->renderStyle = false;
+    // this->offset;
 
     // Get terminal size
     CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -31,8 +30,64 @@ Plotter::Plotter(float distance, float zoom) {
     this->plot.resize(rows, std::vector<int>(cols, 2147483646));
 }
 
-void Plotter::addLine(std::array<fPoint3, 2> endpoints) {
-    this->lines.push_back(endpoints);
+
+void Plotter::loadObj(std::string fileName) {
+    std::fstream file(fileName);
+
+    if (!file.is_open()) {
+        std::cerr << "No file \"" << fileName << "\" found.\n";
+        return;
+    }
+
+    std::cout << "Reading \"" << fileName << "\"...\n"; 
+
+    std::vector<fPoint3> vertices;
+    std::vector<std::vector<fPoint3>> faces;
+    std::string line;
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string type;
+        ss >> type;
+
+        if (type == "v") {
+            fPoint3 newVertex;
+            ss >> newVertex.x >> newVertex.y >> newVertex.z;
+
+            vertices.push_back(newVertex);
+        } else if (type == "f") {
+            std::vector<fPoint3> face;
+            std::string vertexData;
+            
+            while (ss >> vertexData) {
+                std::stringstream vss(vertexData);
+                std::string vertexIndex;
+                std::getline(vss, vertexIndex, '/');
+                face.push_back(vertices[std::stoi(vertexIndex) - 1]);
+            }
+
+            faces.push_back(face);
+        }
+    }
+
+    std::cout << "Done read, plotting...\n";
+
+    for (const auto& face : faces) {
+        this->addDoublePolygon(face);
+    }
+
+    std::cout << "Finished!\n";
+}
+
+void Plotter::addPoint(fPoint3 p) {
+    this->points.push_back(p);
+}
+
+void Plotter::addPoint(float x, float y, float z) {
+    this->points.push_back({x, y, z});
+}
+
+void Plotter::addLine(std::array<fPoint3, 2> ps) {
+    this->lines.push_back(ps);
 }
 
 void Plotter::addLine(float x0, float y0, float z0, float x1, float y1, float z1) {
@@ -59,7 +114,6 @@ void Plotter::addDoubleTriangle(float x0, float y0, float z0, float x1, float y1
     this->addTriangle(x0, y0, z0, x2, y2, z2, x1, y1, z1);
 }
 
-
 void Plotter::addPolygon(std::vector<fPoint3> vertices) {
     if (vertices.size() < 3) return;
 
@@ -84,10 +138,10 @@ void Plotter::resetPlot() {
     }
 }
 
-iPoint2 Plotter::to2d(fPoint3 point) {
-    float x = point.x;
-    float y = point.y;
-    float z = point.z;
+iPoint2 Plotter::to2d(fPoint3 p) {
+    float x = p.x;
+    float y = p.y;
+    float z = p.z;
 
     float scaler = this->distance * this->zoom / (this->distance + z);
 
@@ -97,11 +151,6 @@ iPoint2 Plotter::to2d(fPoint3 point) {
     return {xIndex, yIndex};
 }
 
-// @brief Draws a line between two end points
-// @param x0 the x coordinates of one of the endpoints
-// @param y0 the y coordinates of one of the endpoints
-// @param x1 the x coordinates of the other endpoint
-// @param x1 the y coordinates of the other endpoint
 void Plotter::drawLine(iPoint2 p0, float z0, iPoint2 p1, float z1) {
     if (abs(p1.x - p0.x) > abs(p1.y - p0.y)) {
         if (p0.x > p1.x) {
@@ -254,123 +303,87 @@ void Plotter::putPixel(int x, int y, int z) {
         }
     }
 }
-        
-// @brief Rotates all points along the x axis
-// @param theta the angle in radians of which to rotate the points
+
+fPoint3 Plotter::rotatePointX(fPoint3 p, float theta) {
+    float cosRes = cos(theta);
+    float sinRes = sin(theta);
+
+    return {p.x, p.y * cosRes - p.z * sinRes, p.y * sinRes + p.z * cosRes};
+}
+
+fPoint3 Plotter::rotatePointY(fPoint3 p, float theta) {
+    float cosRes = cos(theta);
+    float sinRes = sin(theta);
+
+    return {p.x * cosRes + p.z * sinRes, p.y, -p.x * sinRes + p.z * cosRes};
+}
+
+fPoint3 Plotter::rotatePointZ(fPoint3 p, float theta) {
+    float cosRes = cos(theta);
+    float sinRes = sin(theta);
+
+    return {p.x * cosRes - p.y * sinRes, p.x * sinRes + p.y * cosRes, p.z};
+}
+
 void Plotter::rotateX(float theta) { 
-    // Calculates the cos and sin of the angle to avoid redundant calculations
-    float cosRes = cos(theta);
-    float sinRes = sin(theta);
+    for (int i = 0; i < (int)this->points.size(); i++) {
+        this->points[i] = this->rotatePointX(this->points[i], theta);
+    } 
 
     for (int i = 0; i < (int)this->lines.size(); i++) {
-        float x0 = this->lines[i][0].x;
-        float y0 = this->lines[i][0].y;
-        float z0 = this->lines[i][0].z;
-        float x1 = this->lines[i][1].x;
-        float y1 = this->lines[i][1].y;
-        float z1 = this->lines[i][1].z;
-
-        this->lines[i][0] = {x0, y0 * cosRes - z0 * sinRes, y0 * sinRes + z0 * cosRes};
-        this->lines[i][1] = {x1, y1 * cosRes - z1 * sinRes, y1 * sinRes + z1 * cosRes};
-    }
-    
-    for (int i = 0; i < (int)this->triangles.size(); i++) {
-        float x0 = this->triangles[i][0].x;
-        float y0 = this->triangles[i][0].y;
-        float z0 = this->triangles[i][0].z;
-        float x1 = this->triangles[i][1].x;
-        float y1 = this->triangles[i][1].y;
-        float z1 = this->triangles[i][1].z;
-        float x2 = this->triangles[i][2].x;
-        float y2 = this->triangles[i][2].y;
-        float z2 = this->triangles[i][2].z;
-
-        this->triangles[i][0] = {x0, y0 * cosRes - z0 * sinRes, y0 * sinRes + z0 * cosRes};
-        this->triangles[i][1] = {x1, y1 * cosRes - z1 * sinRes, y1 * sinRes + z1 * cosRes};
-        this->triangles[i][2] = {x2, y2 * cosRes - z2 * sinRes, y2 * sinRes + z2 * cosRes};
-    }
-}
-
-// @brief Rotates all points along the y axis
-// @param theta the angle in radians of which to rotate the points
-void Plotter::rotateY(float theta) { 
-    // Calculates the cos and sin of the angle to avoid redundant calculations
-    float cosRes = cos(theta);
-    float sinRes = sin(theta);
-
-    for (int i = 0; i < (int)this->lines.size(); i++) {
-        float x0 = lines[i][0].x;
-        float y0 = lines[i][0].y;
-        float z0 = lines[i][0].z;
-        float x1 = lines[i][1].x;
-        float y1 = lines[i][1].y;
-        float z1 = lines[i][1].z;
-
-        lines[i][0] = {x0 * cosRes + z0 * sinRes, y0, -x0 * sinRes + z0 * cosRes};
-        lines[i][1] = {x1 * cosRes + z1 * sinRes, y1, -x1 * sinRes + z1 * cosRes};
-    }      
-    
-    for (int i = 0; i < (int)this->triangles.size(); i++) {
-        float x0 = this->triangles[i][0].x;
-        float y0 = this->triangles[i][0].y;
-        float z0 = this->triangles[i][0].z;
-        float x1 = this->triangles[i][1].x;
-        float y1 = this->triangles[i][1].y;
-        float z1 = this->triangles[i][1].z;
-        float x2 = this->triangles[i][2].x;
-        float y2 = this->triangles[i][2].y;
-        float z2 = this->triangles[i][2].z;
-
-        this->triangles[i][0] = {x0 * cosRes + z0 * sinRes, y0, -x0 * sinRes + z0 * cosRes};
-        this->triangles[i][1] = {x1 * cosRes + z1 * sinRes, y1, -x1 * sinRes + z1 * cosRes};
-        this->triangles[i][2] = {x2 * cosRes + z2 * sinRes, y2, -x2 * sinRes + z2 * cosRes};
-    }
-}
-
-// @brief Rotates all points along the Z axis
-// @param theta the angle in radians of which to rotate the points
-void Plotter::rotateZ(float theta) { 
-    // Calculates the cos and sin of the angle to avoid redundant calculations
-    float cosRes = cos(theta);
-    float sinRes = sin(theta);
-
-    for (int i = 0; i < (int)this->lines.size(); i++) {
-        float x0 = lines[i][0].x;
-        float y0 = lines[i][0].y;
-        float z0 = lines[i][0].z;
-        float x1 = lines[i][1].x;
-        float y1 = lines[i][1].y;
-        float z1 = lines[i][1].z;
-
-        lines[i][0] = {x0 * cosRes - y0 * sinRes, x0 * sinRes + y0 * cosRes, z0};
-        lines[i][1] = {x1 * cosRes - y1 * sinRes, x1 * sinRes + y1 * cosRes, z1};
+        this->lines[i][0] = this->rotatePointX(this->lines[i][0], theta);
+        this->lines[i][1] = this->rotatePointX(this->lines[i][1], theta);
     }     
     
     for (int i = 0; i < (int)this->triangles.size(); i++) {
-        float x0 = this->triangles[i][0].x;
-        float y0 = this->triangles[i][0].y;
-        float z0 = this->triangles[i][0].z;
-        float x1 = this->triangles[i][1].x;
-        float y1 = this->triangles[i][1].y;
-        float z1 = this->triangles[i][1].z;
-        float x2 = this->triangles[i][2].x;
-        float y2 = this->triangles[i][2].y;
-        float z2 = this->triangles[i][2].z;
+        this->triangles[i][0] = this->rotatePointX(this->triangles[i][0], theta);
+        this->triangles[i][1] = this->rotatePointX(this->triangles[i][1], theta);
+        this->triangles[i][2] = this->rotatePointX(this->triangles[i][2], theta);
+    }
+}
 
-        this->triangles[i][0] = {x0 * cosRes - y0 * sinRes, x0 * sinRes + y0 * cosRes, z0};
-        this->triangles[i][1] = {x1 * cosRes - y1 * sinRes, x1 * sinRes + y1 * cosRes, z1};
-        this->triangles[i][2] = {x2 * cosRes - y2 * sinRes, x2 * sinRes + y2 * cosRes, z2};
+void Plotter::rotateY(float theta) { 
+    for (int i = 0; i < (int)this->points.size(); i++) {
+        this->points[i] = this->rotatePointY(this->points[i], theta);
+    } 
+
+    for (int i = 0; i < (int)this->lines.size(); i++) {
+        this->lines[i][0] = this->rotatePointY(this->lines[i][0], theta);
+        this->lines[i][1] = this->rotatePointY(this->lines[i][1], theta);
+    }     
+    
+    for (int i = 0; i < (int)this->triangles.size(); i++) {
+        this->triangles[i][0] = this->rotatePointY(this->triangles[i][0], theta);
+        this->triangles[i][1] = this->rotatePointY(this->triangles[i][1], theta);
+        this->triangles[i][2] = this->rotatePointY(this->triangles[i][2], theta);
+    }
+}
+
+void Plotter::rotateZ(float theta) { 
+    for (int i = 0; i < (int)this->points.size(); i++) {
+        this->points[i] = this->rotatePointZ(this->points[i], theta);
+    } 
+
+    for (int i = 0; i < (int)this->lines.size(); i++) {
+        this->lines[i][0] = this->rotatePointZ(this->lines[i][0], theta);
+        this->lines[i][1] = this->rotatePointZ(this->lines[i][1], theta);
+    }     
+    
+    for (int i = 0; i < (int)this->triangles.size(); i++) {
+        this->triangles[i][0] = this->rotatePointZ(this->triangles[i][0], theta);
+        this->triangles[i][1] = this->rotatePointZ(this->triangles[i][1], theta);
+        this->triangles[i][2] = this->rotatePointZ(this->triangles[i][2], theta);
     }
 }
 
 const float maxZoom = 50.0f;
-void Plotter::changeZoomBy(float change) {
+void Plotter::increaseZoom(float change) {
     if (this->zoom + change <= 0 || this->zoom + change > maxZoom) return;
     this->zoom += change;
 }
 
 const float maxDistance = 50.0f;
-void Plotter::changeDistanceBy(float change) {
+void Plotter::increaseDistance(float change) {
     if (this->distance + change <= 0 || this->distance + change > maxDistance) return;
     this->distance += change;
 }
@@ -401,7 +414,6 @@ std::string getAnsi(int z) {
     return "\033[38;2;" + strValue + ";" + strValue + ";" + strValue + "m" + (char)219u + "\033[0m";
 }
 
-// @brief Calculates what should be draw for each cell then draws the points
 void Plotter::draw() {
     // Move cursor to the starting position
     std::cout << "\033[H";
@@ -410,6 +422,11 @@ void Plotter::draw() {
     std::cout << "\033[?25l";
 
     this->resetPlot();
+
+    for (const auto& point : this->points) {
+        iPoint2 coord = this->to2d(point);
+        this->putPixel(coord.x, coord.y, point.z);
+    }
 
     for (const auto& line : this->lines) {
         iPoint2 aCoord = this->to2d(line[0]);

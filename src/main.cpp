@@ -12,12 +12,7 @@
 int main() {
     Plotter plotter = Plotter(15.0f, 2.0f);
 
-    // plotter.addLine(0,0,0,5,0,0);
-    // plotter.addLine(0,0,0,0,5,0);
-    // plotter.addLine(0,0,0,0,0,5);
-    // plotter.fox();
-    plotter.duck();
-    plotter.icosahedron(3.4641);
+    plotter.loadObj("C:/Users/urkod/source/repos/CppTermDrawer/src/cube.obj");
 
     plotter.draw();
     while (true) {
@@ -41,15 +36,15 @@ int main() {
             }
 
             if (GetAsyncKeyState('I') & 0x8000) { // I key
-                plotter.changeZoomBy(0.1f);
+                plotter.increaseZoom(0.1f);
             } else if (GetAsyncKeyState('O') & 0x8000) { // O key
-                plotter.changeZoomBy(-0.1f);
+                plotter.increaseZoom(-0.1f);
             }
             
             if (GetAsyncKeyState('J') & 0x8000) { // J key
-                plotter.changeDistanceBy(-0.1f);
+                plotter.increaseDistance(-0.1f);
             } else if (GetAsyncKeyState('K') & 0x8000) { // K key
-                plotter.changeDistanceBy(0.1f);
+                plotter.increaseDistance(0.1f);
             }
 
             if (GetAsyncKeyState('T') & 0x8000) { // T key
