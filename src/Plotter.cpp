@@ -605,6 +605,43 @@ void Plotter::duck() {
     }});
 }
 
+void Plotter::fox() {
+    this->addDoublePolygon({{
+        {-2, 2, 0},
+        {-2, 0, 0},
+        {-1, 0, 0},
+        {-1, 2, 0}
+    }});
+
+    this->addDoublePolygon({{
+        {2, 2, 0},
+        {2, 0, 0},
+        {1, 0, 0},
+        {1, 2, 0}
+    }});
+
+    this->addDoublePolygon({{
+        {-2, 0, 0},
+        {2, 0, 0},
+        {2, 1, 0},
+        {-2, 1, 0}
+    }});
+
+    this->addDoublePolygon({{
+        {-1, 1, 0},
+        {-1, -2, 0},
+        {1, -2, 0},
+        {1, 1, 0}
+    }});
+
+    this->addDoublePolygon({{
+        {-2, -2, 0},
+        {2, -2, 0},
+        {2, -1, 0},
+        {-2, -1, 0}
+    }});
+}
+
 void Plotter::end() {
     std::cout << "\x1B[2J\x1B[H";
 }

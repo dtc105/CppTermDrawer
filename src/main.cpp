@@ -15,8 +15,9 @@ int main() {
     // plotter.addLine(0,0,0,5,0,0);
     // plotter.addLine(0,0,0,0,5,0);
     // plotter.addLine(0,0,0,0,0,5);
-    // plotter.duck();
-    plotter.cube(5);
+    // plotter.fox();
+    plotter.duck();
+    plotter.icosahedron(3.4641);
 
     plotter.draw();
     while (true) {

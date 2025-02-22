@@ -91,6 +91,7 @@ class Plotter {
         void filledIcosahedron(float r);
 
         void duck();
+        void fox();
 
         void end();
 };
