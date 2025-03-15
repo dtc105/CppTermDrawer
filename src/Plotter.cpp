@@ -16,7 +16,9 @@ Plotter::Plotter(float distance, float zoom) {
     this->distance = distance;
     this->zoom = zoom;
     this->renderStyle = false;
-    // this->offset;
+    
+    this->savingText = false;
+    this->frameNum = 0;
 
     // Get terminal size
     CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -408,10 +410,22 @@ char getChar(int z) {
 std::string getAnsi(int z) {
     if (z <= zMin || z >= zMax) return " ";
 
-    int value = 255 - static_cast<int>((z - zMin) / (zMax - zMin) * 255);
-    std::string strValue = std::to_string(value);
+    // int value = 255 - static_cast<int>((z - zMin) / (zMax - zMin) * 255);
+    // std::string strValue = std::to_string(value);
 
-    return "\033[38;2;" + strValue + ";" + strValue + ";" + strValue + "m" + (char)219u + "\033[0m";
+    return "█";
+
+    // return "\033[38;2;" + strValue + ";" + strValue + ";" + strValue + "m" + (char)219u + "\033[0m";
+}
+
+void saveText(const std::string& text, int frameNum) {
+    std::string filename = "./frames/text/frame_" + std::to_string(frameNum) + ".txt";
+    std::ofstream file(filename);
+    file << text;
+}
+
+void Plotter::toggleSaving() {
+    this->savingText = !this->savingText;
 }
 
 void Plotter::draw() {
@@ -460,6 +474,11 @@ void Plotter::draw() {
 
     std::cout << buffer;
     std::cout.flush();  // Ensure output is immediately displayed
+
+    if (this->savingText) {
+        saveText(buffer, this->frameNum);
+        this->frameNum++;
+    }
 }
 
 void Plotter::cube(float r) {

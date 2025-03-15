@@ -23,6 +23,8 @@ class Plotter {
         float zoom; // "Zoom" factor of camera, effectively scales the end coords of all points proportionally
         std::vector<std::vector<int>> plot; // The "string" being printed, holds a 2d matrix in order to print the image
         bool renderStyle; // The style to render with, if True then ascii else ansi
+        bool savingText; // Is the text being saved or not
+        int frameNum; // What frame are we on
         
         // @brief Calculates what should be draw for each point
         void calculatePlot();
@@ -105,6 +107,8 @@ class Plotter {
 
         // @brief Clears the plot to avoid artifacts from previous frames
         void resetPlot();
+
+        void toggleSaving();
 
         // @brief Draws a line between two end points
         // @param p0 the first point defining the line
